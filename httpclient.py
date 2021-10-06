@@ -41,6 +41,9 @@ class HTTPClient(object):
         port = url_parsed.port
         path = url_parsed.path
 
+        if path=='':
+            path = '/'
+
         return host, port, path
 
     def connect(self, host, port):
@@ -51,13 +54,16 @@ class HTTPClient(object):
     def get_code(self, data):
 
         self.code = int(data.splitlines()[0].split(' ')[1])
+
         return None
 
     def get_headers(self,data):
+
         return None
 
     def get_body(self, data):
-        self.body = data.splitlines()[-1]
+        self.body = data.split('\r\n\r\n')[1]
+
         return None
     
     def sendall(self, data):
@@ -78,32 +84,42 @@ class HTTPClient(object):
                 done = not part
         return buffer.decode('utf-8')
 
+
+
     def GET(self, url, args=None):
 
         # parse url
         host, port, path = self.get_host_port(url)
 
         # connet & send request
+        if port == None:
+            port = 80
+
         self.connect(host, port)
-        data = "GET "+ path + " HTTP/1.1\r\n" + "Host: "+host+"\r\n" + "Connection: close\r\n" + "Accept: application/x-www-form-urlencoded\r\n\r\n"
+        data = "GET "+ path + " HTTP/1.1\r\n" + "Host: "+host+"\r\n" + "Connection: close\r\n\r\n"
         self.sendall(data)
 
         # receive response
         buffer = self.recvall(self.socket)
         print(buffer)
-        self.close()
 
         # parse response
         self.get_code(buffer)
         self.get_body(buffer)
 
+        self.close()
+
         return HTTPResponse(self.code, self.body)
+
+
 
     def POST(self, url, args=None):
         # parse url
         host, port, path = self.get_host_port(url)
 
         # connet & send request
+        if port == None:
+            port = 80
         self.connect(host, port)
 
         if args is not None:
